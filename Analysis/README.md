@@ -22,7 +22,7 @@ Two real data-quality issues were found and fixed during this build, rather than
 
 | Executive Overview | ML Model Prediction |
 |---|---|
-| ![Executive Dashboard](Images/Excutive%20Dashboard.png) | ![ML Model Prediction](Images/ML%20Model%20Prediction.png) |
+| ![Executive Dashboard](Images/Executive%20Dashboard.png) | ![ML Model Prediction](Images/ML%20Model%20Prediction.png) |
 
 | Trends Over Time | Trends Over Time (2) |
 |---|---|

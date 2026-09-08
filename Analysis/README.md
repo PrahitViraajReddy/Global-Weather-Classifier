@@ -1,85 +1,34 @@
-# Global Weather Analysis
+## 📊 Power BI Analytics Dashboard
 
-This directory contains the Power BI analysis layer for the **Global Weather Classifier** project.
+In addition to the ML classifier above, this project includes a full Power BI dashboard built on the same [Global Weather Repository](https://www.kaggle.com/datasets/nelgiriyewithana/global-weather-repository) dataset (116,933 records).
 
-## Objective
+**File:** [`weather.pbix`](Analysis/weather.pbix) — open in [Power BI Desktop](https://www.microsoft.com/en-us/power-platform/products/power-bi/downloads) (free) to explore interactively.
 
-The analysis layer converts the global weather data used by the project into an interactive business-intelligence view for comparing weather conditions across countries and studying trends over time.
+### What's inside
 
-## Current Analysis Scope
+- **10 report pages** — Executive Overview, Trends Over Time, and dedicated pages for Temperature, Humidity, AQI, UV Index, WindSpeed, Precipitation, Visibility, and Cloud Cover
+- **Data model** — fact table + a dedicated date table, with explicit DAX measures (averages, temperature categorization, prediction accuracy)
+- **Geographic visuals** — country-level maps built with ArcGIS Maps for Power BI
+- **ML integration** — a separate page surfaces the classifier's predictions (`Predicted Category`, `Correct Prediction`) alongside an `Accuracy` measure, connecting the model output back into the BI layer
 
-- Executive weather KPI dashboard
-- Average temperature analysis
-- Average AQI analysis
-- Average humidity analysis
-- Average visibility analysis
-- Average wind-speed analysis
-- Average precipitation analysis
-- Average cloud-cover analysis
-- Average UV-index analysis
-- Top-20 country comparisons
-- Geographic analysis using maps
-- Time-based trend analysis
+### Data cleaning highlights
 
-## Power BI Report Structure
+Two real data-quality issues were found and fixed during this build, rather than just visualized past:
 
-The report contains dedicated analysis pages for the major weather indicators, an executive dashboard, and a trends section.
+- **Multilingual duplicate countries** — 10 rows had country names in Portuguese, German, Russian, Arabic, and Chinese (e.g. `Polônia`, `Südkorea`, `火鸡`) instead of English, silently splitting single countries into multiple entries on every chart. Identified via a non-ASCII character scan and merged back into their correct English names.
+- **Wind-speed outliers** — a small number of records (5 of 116,933) had physically impossible wind speeds (one as high as 2963 kph). One case (Burundi, June 23) was cross-checked against real-world weather records and confirmed as a genuine storm event; the remaining extreme values were capped at the 99.9th percentile rather than dropped, to avoid discarding real rows over one unverified field.
 
-### Executive Dashboard
+### Screenshots
+### Screenshots
 
-Provides a consolidated view of the major weather KPIs:
+| Executive Overview | ML Model Prediction |
+|---|---|
+| ![Executive Dashboard](Analysis/Images/Excutive Dashboard.png) | ![ML Model Prediction](Analysis/Images/ML Model Prediction.png) |
 
-- Total records
-- Average temperature
-- Average AQI
-- Average UV index
-- Average humidity
-- Average visibility
-- Average wind speed
-- Average precipitation
-- Average cloud cover
+| Trends Over Time  | Trends Over Time (2) |
+|---|---|
+| ![Trends Over Time 1](Analysis/Images/Trends Over Time.png) | ![Trends Over Time 2](Analysis/Images/Trends Over TIme(2).png) |
 
-### Country-Level Analysis
+### Why Power BI *and* a native Python dashboard
 
-The indicator pages use Top-20 country comparisons to keep the visual analysis focused and readable while still supporting global-scale data exploration.
-
-### Trend Analysis
-
-The trends section uses date-based visualizations to examine how the major weather indicators change over time.
-
-## Architecture
-
-```text
-Global Weather Data
-        |
-        +--------------------+
-        |                    |
-        v                    v
-   ML Classification     Power BI Analysis
-        |                    |
-        v                    v
-   Model Output       Semantic Model + DAX
-                             |
-                             v
-                    Interactive Dashboard
-```
-
-The current Power BI report focuses on weather analytics. Integration of model prediction outputs into the BI layer can be added as a subsequent phase so that actual-vs-predicted performance and model confidence can be analyzed alongside weather conditions.
-
-## Tooling
-
-- Power BI Desktop
-- Power Query
-- DAX
-- Interactive maps and charts
-- Date-based trend analysis
-
-## Repository Role
-
-The parent repository contains the machine-learning implementation. This `Analysis` directory keeps the BI/analytics layer separated from the model-development files while keeping both parts under the same project.
-
-## Usage
-
-Open the `.pbix` report with **Microsoft Power BI Desktop** to interact with the dashboard and inspect the report model, visuals, filters, and measures.
-
-> Note: The PBIX file is a Power BI Desktop report and is intended to be used as an analysis artifact rather than executed as a Python application.
+The live Streamlit app above uses a Plotly-based analytics section (not an embedded Power BI report) — Power BI's public embedding requires either "Publish to Web" or an Azure  app registration with tenant admin consent, neither of which is available on an institutional account. Rather than block the live demo on that, the same analysis was rebuilt natively in Python so the deployed app has zero external dependencies. The `.pbix` file is included here as a downloadable artifact for anyone who wants to see the full Power BI build — DAX measures, ArcGIS maps, and all.

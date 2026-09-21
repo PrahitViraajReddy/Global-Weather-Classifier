@@ -148,7 +148,6 @@ This keeps the live application independent of Power BI embedding requirements w
 **Visualization**
 - Matplotlib
 - Seaborn
-- Plotly
 
 **Business Intelligence**
 - Power BI

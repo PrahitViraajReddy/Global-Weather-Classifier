@@ -6,7 +6,7 @@ In addition to the ML classifier above, this project includes a full Power BI da
 
 ### What's inside
 
-- **10 report pages** — Executive Overview, Trends Over Time, and dedicated pages for Temperature, Humidity, AQI, UV Index, WindSpeed, Precipitation, Visibility, and Cloud Cover
+- **11 report pages** — Executive Overview, Trends Over Time, dedicated pages for Temperature, Humidity, AQI, UV Index, WindSpeed, Precipitation, Visibility, and Cloud Cover, plus ML Prediction Analysis
 - **Data model** — fact table + a dedicated date table, with explicit DAX measures (averages, temperature categorization, prediction accuracy)
 - **Geographic visuals** — country-level maps built with ArcGIS Maps for Power BI
 - **ML integration** — a separate page surfaces the classifier's predictions (`Predicted Category`, `Correct Prediction`) alongside an `Accuracy` measure, connecting the model output back into the BI layer
@@ -30,4 +30,4 @@ Two real data-quality issues were found and fixed during this build, rather than
 
 ### Why Power BI *and* a native Python dashboard
 
-The live Streamlit app above uses a Plotly-based analytics section (not an embedded Power BI report) — Power BI's public embedding requires either "Publish to Web" or an Azure app registration with tenant admin consent, neither of which is available on an institutional account. Rather than block the live demo on that, the same analysis was rebuilt natively in Python so the deployed app has zero external dependencies. The `.pbix` file is included here as a downloadable artifact for anyone who wants to see the full Power BI build — DAX measures, ArcGIS maps, and all.
+The live Streamlit app provides the deployed prediction interface, while the `.pbix` file preserves the separate Power BI reporting layer. The two outputs are intentionally kept separate: the Streamlit app does not depend on Power BI embedding, while the Power BI file contains the deeper reporting, DAX, geographic visuals, and prediction analysis.

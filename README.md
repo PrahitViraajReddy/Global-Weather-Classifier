@@ -161,6 +161,8 @@ Inputs should use the units displayed in the app. Model predictions depend on th
 
 ## Future Improvements
 
+- **Integrate the latest live weather data** through a weather API, allowing users to retrieve current conditions for a selected location instead of entering every measurement manually.
+- Explore combining live observations with the existing machine learning model while clearly distinguishing current-condition classification from future weather forecasting.
 - Add reproducible evaluation metrics and a confusion matrix on held-out data.
 - Document the dataset source, license, and preprocessing decisions.
 - Add input validation and more robust handling of missing or invalid values.

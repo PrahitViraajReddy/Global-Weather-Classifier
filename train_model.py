@@ -52,6 +52,9 @@ def load_data(path: Path = DATA_PATH) -> pd.DataFrame:
         df[col] = pd.to_numeric(df[col], errors="coerce")
     df = df.replace([np.inf, -np.inf], np.nan).dropna(subset=[TARGET_COLUMN])
     df = df.drop_duplicates()
+    empty_features = [col for col in FEATURE_COLUMNS if df[col].notna().sum() == 0]
+    if empty_features:
+        raise ValueError(f"Feature columns contain no usable numeric values: {empty_features}")
     if len(df) < 50:
         raise ValueError(f"Need at least 50 valid rows to train; found {len(df)}.")
     return df
@@ -114,7 +117,14 @@ def main() -> None:
         target_names=ordered_labels, zero_division=0
     ))
     if len(model_classes) > 1 and len(np.unique(y_test)) > 1:
-        print(f"Macro ROC AUC (OVR): {roc_auc_score(y_test, probabilities, labels=model_classes, multi_class='ovr', average='macro'):.4f}")
+        try:
+            auc = roc_auc_score(
+                y_test, probabilities, labels=model_classes,
+                multi_class="ovr", average="macro",
+            )
+            print(f"Macro ROC AUC (OVR): {auc:.4f}")
+        except ValueError as exc:
+            print(f"Macro ROC AUC unavailable for this split: {exc}")
     else:
         print("Macro ROC AUC unavailable: the held-out set contains fewer than two classes.")
 

@@ -11,7 +11,6 @@ FEATURE_COLUMNS = [
     "longitude", "latitude", "humidity", "cloud", "precip_in", "wind_kph",
     "visibility_km", "uv_index", "gust_mph", "pressure_mb", "air_quality_Ozone",
 ]
-FALLBACK_LABELS = ["Freezing", "Cold", "Moderate", "Warm", "Hot"]
 
 st.set_page_config(page_title="Global Weather Analytics", page_icon="🌦️", layout="wide")
 
@@ -24,10 +23,19 @@ def load_model_bundle():
             "then run 'python train_model.py'."
         )
     artifact = joblib.load(MODEL_PATH)
-    # Older model files stored only the estimator.
-    if isinstance(artifact, dict) and "model" in artifact:
-        return artifact
-    return {"model": artifact, "feature_columns": FEATURE_COLUMNS, "class_labels": FALLBACK_LABELS}
+    if not isinstance(artifact, dict) or "model" not in artifact:
+        raise ValueError(
+            "The saved model uses an older format without its learned temperature-bin metadata. "
+            "Retrain it with `python train_model.py` before using the app."
+        )
+    feature_columns = artifact.get("feature_columns")
+    class_labels = artifact.get("class_labels")
+    if feature_columns != FEATURE_COLUMNS or not isinstance(class_labels, list) or not class_labels:
+        raise ValueError(
+            "The saved model bundle has missing or incompatible feature/class metadata. "
+            "Retrain it with `python train_model.py`."
+        )
+    return artifact
 
 
 def main() -> None:
@@ -35,13 +43,13 @@ def main() -> None:
     st.caption("Classifies temperature relative to the training dataset; this is not a forecast or official weather advice.")
     try:
         bundle = load_model_bundle()
-    except FileNotFoundError as exc:
+    except (FileNotFoundError, ValueError) as exc:
         st.error(str(exc))
         st.stop()
 
     model = bundle["model"]
-    feature_columns = bundle.get("feature_columns", FEATURE_COLUMNS)
-    class_labels = bundle.get("class_labels", FALLBACK_LABELS)
+    feature_columns = bundle["feature_columns"]
+    class_labels = bundle["class_labels"]
 
     st.divider()
     st.subheader("Temperature Category Prediction")
@@ -79,7 +87,7 @@ def main() -> None:
             final_estimator = list(model.named_steps.values())[-1]
             model_classes = list(getattr(final_estimator, "classes_", model_classes))
         if prediction < 0 or prediction >= len(class_labels):
-            st.error("The model returned a class outside the configured label range.")
+            st.error("The model returned a class outside the configured label range. Retrain the model bundle.")
             return
         category = class_labels[prediction]
         st.divider()

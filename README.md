@@ -2,10 +2,6 @@
 
 A Streamlit application that classifies observed weather inputs into **temperature quantiles learned from the training dataset**. It is a classifier, not a weather forecast, and it does not fetch live weather data.
 
-## Live Streamlit app
-
-[Open Global Weather Classifier](https://prahitviraajreddy-global-weather-classifier-app-vnr7xd.streamlit.app/)
-
 ## Run locally
 
 Install Git LFS before cloning/pulling the dataset. The repository's `GlobalWeatherRepository.csv` is stored as a Git LFS object, so the small pointer file alone is not the actual CSV.

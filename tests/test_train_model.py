@@ -37,3 +37,14 @@ def test_missing_columns_are_reported(tmp_path):
     pd.DataFrame({"temperature_celsius": [1.0] * 60}).to_csv(path, index=False)
     with pytest.raises(ValueError, match="missing required columns"):
         train_model.load_data(path)
+
+
+
+def test_all_missing_feature_column_is_rejected(tmp_path):
+    path = tmp_path / "empty_feature.csv"
+    data = {column: [1.0] * 60 for column in train_model.FEATURE_COLUMNS}
+    data["longitude"] = [float("nan")] * 60
+    data[train_model.TARGET_COLUMN] = list(range(60))
+    pd.DataFrame(data).to_csv(path, index=False)
+    with pytest.raises(ValueError, match="no usable numeric values"):
+        train_model.load_data(path)

@@ -2,7 +2,6 @@
 from pathlib import Path
 
 import joblib
-import numpy as np
 import pandas as pd
 import streamlit as st
 
@@ -11,31 +10,46 @@ FEATURE_COLUMNS = [
     "longitude", "latitude", "humidity", "cloud", "precip_in", "wind_kph",
     "visibility_km", "uv_index", "gust_mph", "pressure_mb", "air_quality_Ozone",
 ]
+LEGACY_CLASS_LABELS = ["Freezing", "Cold", "Moderate", "Warm", "Hot"]
 
 st.set_page_config(page_title="Global Weather Analytics", page_icon="🌦️", layout="wide")
 
 
 @st.cache_resource
 def load_model_bundle():
+    """Load the current bundle or adapt the repository's legacy raw model."""
     if not MODEL_PATH.is_file():
         raise FileNotFoundError(
-            "weather_model.pkl was not found. Download the dataset with 'git lfs pull', "
-            "then run 'python train_model.py'."
+            "weather_model.pkl was not found. Ensure the model file is included in the deployment."
         )
+
     artifact = joblib.load(MODEL_PATH)
+
+    # Older versions saved the sklearn model directly, rather than a metadata bundle.
     if not isinstance(artifact, dict) or "model" not in artifact:
-        raise ValueError(
-            "The saved model uses an older format without its learned temperature-bin metadata. "
-            "Retrain it with `python train_model.py` before using the app."
-        )
+        model = artifact.get("model") if isinstance(artifact, dict) else artifact
+        if not hasattr(model, "predict"):
+            raise ValueError("weather_model.pkl is not a supported scikit-learn model. Retrain it with train_model.py.")
+        model_features = list(getattr(model, "feature_names_in_", FEATURE_COLUMNS))
+        if model_features != FEATURE_COLUMNS:
+            raise ValueError(
+                "The saved legacy model uses a different feature schema. Retrain it with train_model.py."
+            )
+        return {
+            "model": model,
+            "feature_columns": FEATURE_COLUMNS,
+            "class_labels": LEGACY_CLASS_LABELS,
+            "legacy_model": True,
+        }
+
     feature_columns = artifact.get("feature_columns")
     class_labels = artifact.get("class_labels")
     if feature_columns != FEATURE_COLUMNS or not isinstance(class_labels, list) or not class_labels:
         raise ValueError(
             "The saved model bundle has missing or incompatible feature/class metadata. "
-            "Retrain it with `python train_model.py`."
+            "Retrain it with train_model.py."
         )
-    return artifact
+    return {**artifact, "legacy_model": False}
 
 
 def main() -> None:
@@ -43,13 +57,19 @@ def main() -> None:
     st.caption("Classifies temperature relative to the training dataset; this is not a forecast or official weather advice.")
     try:
         bundle = load_model_bundle()
-    except (FileNotFoundError, ValueError) as exc:
+    except (FileNotFoundError, ValueError, OSError) as exc:
         st.error(str(exc))
         st.stop()
 
     model = bundle["model"]
     feature_columns = bundle["feature_columns"]
     class_labels = bundle["class_labels"]
+    if bundle["legacy_model"]:
+        st.warning(
+            "A legacy model was loaded successfully. Its original temperature-bin boundaries were not saved, "
+            "so the displayed category names are the legacy labels and should be treated as approximate. "
+            "For fully reproducible category metadata, retrain with train_model.py."
+        )
 
     st.divider()
     st.subheader("Temperature Category Prediction")
@@ -89,6 +109,7 @@ def main() -> None:
         if prediction < 0 or prediction >= len(class_labels):
             st.error("The model returned a class outside the configured label range. Retrain the model bundle.")
             return
+
         category = class_labels[prediction]
         st.divider()
         st.subheader("Prediction Result")
@@ -96,11 +117,10 @@ def main() -> None:
         with result_col:
             st.metric("Temperature Category", category)
         with details_col:
-            st.info(f"Predicted **{category}**. These labels are dataset-relative quantiles, not fixed temperature ranges.")
+            st.info(f"Predicted **{category}**. Temperature categories are dataset-relative, not fixed temperature ranges.")
 
         if hasattr(model, "predict_proba"):
             probabilities = model.predict_proba(features)[0]
-            # sklearn classes are the numeric labels used to train the classifier.
             probability_labels = [class_labels[int(c)] for c in model_classes] if model_classes else class_labels[:len(probabilities)]
             probability_df = pd.DataFrame({"Model probability": probabilities}, index=probability_labels)
             st.write("### Class probabilities")
@@ -109,7 +129,7 @@ def main() -> None:
             st.dataframe(features.T.rename(columns={0: "Value"}), use_container_width=True)
 
     st.divider()
-    st.caption("Workflow: Data validation → Training-only target bins → Train/test evaluation → Random Forest → Streamlit prediction")
+    st.caption("Workflow: Data validation → Temperature categories → Train/test evaluation → Random Forest → Streamlit prediction")
 
 
 if __name__ == "__main__":

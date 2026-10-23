@@ -1,43 +1,192 @@
-# Global Weather Classifier
+# 🌦️ Global Weather Classifier
 
-A Streamlit application that classifies observed weather inputs into **temperature quantiles learned from the training dataset**. It is a classifier, not a weather forecast, and it does not fetch live weather data.
+**An end-to-end weather analytics and machine-learning project combining data exploration, temperature-category classification, and Power BI reporting.**
+
+<p>
+  <a href="https://prahitviraajreddy-global-weather-classifier-app-vnr7xd.streamlit.app/"><img alt="Live App" src="https://img.shields.io/badge/Live%20App-Open-2ea44f?style=flat-square"></a>
+  <img alt="Python" src="https://img.shields.io/badge/Python-3.x-3776AB?style=flat-square&logo=python&logoColor=white">
+  <img alt="Machine Learning" src="https://img.shields.io/badge/ML-Random%20Forest-orange?style=flat-square">
+  <img alt="Power BI" src="https://img.shields.io/badge/Analytics-Power%20BI-F2C811?style=flat-square&logo=powerbi&logoColor=black">
+  <img alt="Streamlit" src="https://img.shields.io/badge/App-Streamlit-FF4B4B?style=flat-square&logo=streamlit&logoColor=white">
+</p>
+
+**[Open the live application](https://prahitviraajreddy-global-weather-classifier-app-vnr7xd.streamlit.app/)** · **[View the source code](https://github.com/PrahitViraajReddy/Global-Weather-Classifier)**
+
+---
+
+## What is Global Weather Classifier?
+
+Global Weather Classifier is a data analytics and machine-learning project built around global weather observations. It combines data-quality checks, exploratory analysis, a Random Forest classification workflow, an interactive Streamlit interface, and a Power BI dashboard.
+
+The application classifies supplied weather measurements into temperature categories learned from the training data. **It is a classifier, not a weather-forecasting service**, and the prediction interface does not fetch live weather observations.
+
+## Features
+
+- **Weather data analysis** — explore distributions, missing values, duplicates, and relationships between weather variables.
+- **Data-quality investigation** — examine issues such as multilingual country-name duplicates and extreme wind-speed observations.
+- **Temperature-category classification** — predict a temperature quantile category from supplied weather and location inputs.
+- **Model evaluation** — review classification reports, balanced accuracy, confusion matrices, and ROC/AUC analysis where defined.
+- **Power BI reporting** — explore weather patterns and model-prediction analysis in a dedicated dashboard.
+- **Interactive web application** — enter weather conditions and receive a model prediction through Streamlit.
+
+## How it works
+
+```text
+Weather observations
+        │
+        ▼
+Data validation and exploration
+        │
+        ▼
+Feature preparation and target construction
+        │
+        ▼
+Train/test split and Random Forest training
+        │
+        ▼
+Model evaluation and saved model artifact
+        │
+        ├──────────────► Streamlit prediction app
+        │
+        └──────────────► Power BI analytics
+```
+
+The training workflow validates the input data, constructs quantile-based target classes, fits preprocessing and the classifier using training data, evaluates predictions on held-out data, and saves the fitted model for the application.
+
+## Dataset
+
+The project documentation describes a dataset of **116,933 global weather records**.
+
+- **Domain:** Weather and environmental observations
+- **Prediction target:** Temperature category
+- **Target construction:** Five quantile-based categories
+- **Input features:** Latitude, longitude, humidity, cloud cover, precipitation, wind speed, wind gust, visibility, UV index, pressure, and ozone
+
+Quantile labels represent relative positions within the training data. They should not be interpreted as universal meteorological labels such as “freezing” or “hot.”
+
+The repository's `GlobalWeatherRepository.csv` is tracked with **Git LFS**. Use Git LFS to retrieve the actual dataset when cloning the repository.
+
+## Machine learning and evaluation
+
+**Model:** Random Forest Classifier
+
+The documented evaluation reports approximately:
+
+| Metric | Result |
+|---|---:|
+| Balanced accuracy | 0.71 |
+| Macro ROC AUC | 0.96 |
+
+The workflow also reports precision, recall, F1-score, a confusion matrix, and multi-class ROC/AUC analysis when the metric is defined.
+
+These values describe the documented evaluation and may vary if the dataset, split, features, or training procedure changes. The evaluation uses a random row split; repeated observations from the same locations or time periods may warrant a more demanding location- or time-based holdout.
+
+## Power BI analytics
+
+The Power BI report is documented at `Analysis/weather.pbix` and covers:
+
+- Executive overview
+- Trends over time
+- Temperature and humidity
+- Air quality and UV index
+- Wind speed and precipitation
+- Visibility and cloud cover
+- Machine-learning prediction analysis
+
+The report uses DAX measures and geographic and time-based analysis to complement the prediction interface.
+
+## Technology stack
+
+| Layer | Technologies |
+|---|---|
+| Language | Python |
+| Data analysis | Pandas, NumPy |
+| Machine learning | scikit-learn, Random Forest |
+| Evaluation | Classification metrics, ROC/AUC |
+| Visualization | Matplotlib, Seaborn |
+| Business intelligence | Power BI, DAX |
+| Web interface | Streamlit |
+| Dataset storage | Git LFS |
 
 ## Run locally
 
-Install Git LFS before cloning/pulling the dataset. The repository's `GlobalWeatherRepository.csv` is stored as a Git LFS object, so the small pointer file alone is not the actual CSV.
+### 1. Clone the repository and retrieve the dataset
+
+Install Git LFS first, then run:
 
 ```bash
 git lfs install
 git clone https://github.com/PrahitViraajReddy/Global-Weather-Classifier.git
 cd Global-Weather-Classifier
 git lfs pull
+```
+
+### 2. Install dependencies
+
+```bash
+python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
+```
+
+### 3. Train the model
+
+```bash
 python train_model.py
+```
+
+Training creates or refreshes `weather_model.pkl`. If the dataset is unavailable, training should stop with a clear error rather than treating the Git LFS pointer as CSV data.
+
+### 4. Launch the application
+
+```bash
 streamlit run app.py
 ```
 
-If the dataset is not available, training stops with a clear error instead of attempting to parse the LFS pointer as CSV.
-
-## Evaluation and methodology
-
-The training script:
-1. Validates the dataset schema, converts model fields to numeric values, drops invalid target rows and duplicate records.
-2. Splits the raw temperature target into training and test portions **before** estimating temperature-quantile boundaries.
-3. Learns class boundaries from the training target only and applies those boundaries to the held-out target.
-4. Fits median imputation and a 300-tree Random Forest using training data only.
-5. Reports held-out balanced accuracy, confusion matrix, per-class precision/recall/F1, and macro one-vs-rest ROC AUC when it is defined.
-6. Saves the estimator and its feature names, quantile boundaries, and class labels in `weather_model.pkl`; the app uses these same labels.
-
-Class names such as “Temperature quantile 1” are intentionally used instead of “Freezing” or “Hot”: quantile classes are relative to this dataset and do not represent universal meteorological temperature thresholds. The evaluation is a random row split; if the dataset contains repeated observations by location or time, a future stronger evaluation should hold out locations or later time periods separately.
-
-## Features
-
-The classifier uses longitude, latitude, humidity, cloud cover, precipitation, wind speed and gust, visibility, UV index, pressure, and ozone. All inputs should use the units shown in the app.
-
-## Tests
+### 5. Run tests
 
 ```bash
 python -m pytest -q
 ```
 
-The saved model is a generated artifact. Retrain it after changing the data, features, target construction, or training procedure.
+Retrain the model after changing the dataset, feature set, target construction, or training procedure.
+
+## Repository structure
+
+```text
+Global-Weather-Classifier/
+├── Analysis/
+│   ├── Images/
+│   └── weather.pbix
+├── GlobalWeatherRepository.csv
+├── app.py
+├── train_model.py
+├── weather.py
+├── weather_model.pkl
+├── requirements.txt
+└── README.md
+```
+
+## Engineering highlights
+
+- End-to-end data analysis and machine-learning workflow
+- Data validation and preprocessing
+- Training-only estimation of quantile boundaries and preprocessing
+- Held-out model evaluation with classification metrics
+- Saved model artifacts reused by the prediction application
+- Interactive Streamlit deployment
+- Power BI reporting with DAX and geographic analysis
+
+## Links
+
+- **Live application:** https://prahitviraajreddy-global-weather-classifier-app-vnr7xd.streamlit.app/
+- **GitHub repository:** https://github.com/PrahitViraajReddy/Global-Weather-Classifier
+- **Author:** [Madupu Prahit Viraaj Reddy](https://github.com/PrahitViraajReddy)
+- **LinkedIn:** [Prahit Viraaj Reddy](https://www.linkedin.com/in/prahit-viraaj-reddy-madupu-5169332ba/)
+
+---
+
+<div align="center">
+
+Built with Python, scikit-learn, Streamlit, and Power BI.
+
+</div>
